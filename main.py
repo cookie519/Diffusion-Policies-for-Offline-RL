@@ -15,6 +15,7 @@ from utils.logger import logger, setup_logger
 from torch.utils.tensorboard import SummaryWriter
 
 import time
+import csv
 
 hyperparameters = {
     'halfcheetah-medium-v2':         {'lr': 3e-4, 'eta': 1.0,   'max_q_backup': False,  'reward_tune': 'no',          'eval_freq': 50, 'num_epochs': 2000, 'gn': 9.0,  'top_k': 1},
