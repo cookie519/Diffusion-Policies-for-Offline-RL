@@ -14,6 +14,8 @@ from utils.data_sampler import Data_Sampler
 from utils.logger import logger, setup_logger
 from torch.utils.tensorboard import SummaryWriter
 
+import time
+
 hyperparameters = {
     'halfcheetah-medium-v2':         {'lr': 3e-4, 'eta': 1.0,   'max_q_backup': False,  'reward_tune': 'no',          'eval_freq': 50, 'num_epochs': 2000, 'gn': 9.0,  'top_k': 1},
     'hopper-medium-v2':              {'lr': 3e-4, 'eta': 1.0,   'max_q_backup': False,  'reward_tune': 'no',          'eval_freq': 50, 'num_epochs': 2000, 'gn': 9.0,  'top_k': 2},
@@ -80,12 +82,22 @@ def train_agent(env, state_dim, action_dim, max_action, device, output_dir, args
     max_timesteps = args.num_epochs * args.num_steps_per_epoch
     metric = 100.
     utils.print_banner(f"Training Start", separator="*", num_star=90)
+
+    training_time = 0.0
+    gradient_steps = 0
+    
     while (training_iters < max_timesteps) and (not early_stop):
         iterations = int(args.eval_freq * args.num_steps_per_epoch)
+        #time
+        start_time = time.time()
         loss_metric = agent.train(data_sampler,
                                   iterations=iterations,
                                   batch_size=args.batch_size,
                                   log_writer=writer)
+        end_time = time.time()
+        training_time += end_time - start_time
+        gradient_steps += iterations
+        
         training_iters += iterations
         curr_epoch = int(training_iters // int(args.num_steps_per_epoch))
 
@@ -118,6 +130,22 @@ def train_agent(env, state_dim, action_dim, max_action, device, output_dir, args
 
         if args.save_best_model:
             agent.save_model(output_dir, curr_epoch)
+            
+    # save time
+    if not os.path.exists("./Diff_ql_models"):
+        os.makedirs(dir)
+    expid = args.env_name + '-baseline-seed' + str(args.seed)
+    run_name = os.path.join("./Diff_ql_models", expid)
+    if not os.path.exists(run_name):
+        os.makedirs(run_name)
+
+    time_list = [['Gradient steps', 'Time'], [gradient_steps, training_time]]
+    file_time = os.path.join("./Diff_ql_models", expid, "training_time.csv")
+    with open(file_time, mode='w', newline='') as file_t:
+        writer = csv.writer(file_t)
+        writer.writerows(time_list)
+
+    
 
     # Model Selection: online or offline
     scores = np.array(evaluations)
