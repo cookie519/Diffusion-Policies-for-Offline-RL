@@ -145,7 +145,7 @@ def train_agent(env, state_dim, action_dim, max_action, device, output_dir, args
             agent.save_model(output_dir, curr_epoch)
 
          ## eval score
-        if training_iters % 20000 == 0:
+        if gradient_steps % 20000 == 0:
             mean, std, time_eval, query_eval = parallel_simple_eval_policy(agent.actor, args.env_name, seed = 0)
             normalized_score.append([mean, std])
             if (training_iters >= max_timesteps) or (early_stop):
@@ -266,7 +266,7 @@ if __name__ == "__main__":
     args.output_dir = f'{args.dir}'
 
     #args.num_epochs = hyperparameters[args.env_name]['num_epochs']
-    args.num_epochs = 1000
+    args.num_epochs = 60
     args.eval_freq = hyperparameters[args.env_name]['eval_freq']
     args.eval_episodes = 10 if 'v2' in args.env_name else 100
 
