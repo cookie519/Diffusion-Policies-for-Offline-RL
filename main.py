@@ -99,7 +99,7 @@ def train_agent(env, state_dim, action_dim, max_action, device, output_dir, args
     normalized_score = [['mean', 'std']]
     
     while (training_iters < max_timesteps) and (not early_stop):
-        iterations = int(args.eval_freq * args.num_steps_per_epoch)
+        iterations = int(20 * args.num_steps_per_epoch)
         #time
         start_time = time.time()
         loss_metric = agent.train(data_sampler,
@@ -124,16 +124,16 @@ def train_agent(env, state_dim, action_dim, max_action, device, output_dir, args
         logger.dump_tabular()
 
         # Evaluation
-        eval_res, eval_res_std, eval_norm_res, eval_norm_res_std = eval_policy(agent, args.env_name, args.seed,
+        #eval_res, eval_res_std, eval_norm_res, eval_norm_res_std = eval_policy(agent, args.env_name, args.seed,
                                                                                eval_episodes=args.eval_episodes)
-        evaluations.append([eval_res, eval_res_std, eval_norm_res, eval_norm_res_std,
+        #evaluations.append([eval_res, eval_res_std, eval_norm_res, eval_norm_res_std,
                             np.mean(loss_metric['bc_loss']), np.mean(loss_metric['ql_loss']),
                             np.mean(loss_metric['actor_loss']), np.mean(loss_metric['critic_loss']),
                             curr_epoch])
-        np.save(os.path.join(output_dir, "eval"), evaluations)
-        logger.record_tabular('Average Episodic Reward', eval_res)
-        logger.record_tabular('Average Episodic N-Reward', eval_norm_res)
-        logger.dump_tabular()
+        #np.save(os.path.join(output_dir, "eval"), evaluations)
+        #logger.record_tabular('Average Episodic Reward', eval_res)
+        #logger.record_tabular('Average Episodic N-Reward', eval_norm_res)
+        #logger.dump_tabular()
 
         bc_loss = np.mean(loss_metric['bc_loss'])
         if args.early_stop:
@@ -145,15 +145,15 @@ def train_agent(env, state_dim, action_dim, max_action, device, output_dir, args
             agent.save_model(output_dir, curr_epoch)
 
          ## eval score
-        if gradient_steps % 20000 == 0:
-            mean, std, time_eval, query_eval = parallel_simple_eval_policy(agent.actor, args.env_name, seed = 0)
-            normalized_score.append([mean, std])
-            if (training_iters >= max_timesteps) or (early_stop):
-                time_eval_record = [['Query times', 'Time'], [query_eval, time_eval]]
-                file_time = os.path.join("./Diff_ql_models", expid, "eval_time.csv")
-                with open(file_time, mode='w', newline='') as file_t:
-                    writer = csv.writer(file_t)
-                    writer.writerows(time_eval_record)
+        
+        mean, std, time_eval, query_eval = parallel_simple_eval_policy(agent.actor, args.env_name, seed = 0)
+        normalized_score.append([mean, std])
+        if (training_iters >= max_timesteps) or (early_stop):
+            time_eval_record = [['Query times', 'Time'], [query_eval, time_eval]]
+            file_time = os.path.join("./Diff_ql_models", expid, "eval_time.csv")
+            with open(file_time, mode='w', newline='') as file_t:
+                writer = csv.writer(file_t)
+                writer.writerows(time_eval_record)
 
     # save normalized_score
     filename = os.path.join("./Diff_ql_models", expid, "normalized_score.csv")
