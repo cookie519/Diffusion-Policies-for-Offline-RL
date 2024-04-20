@@ -94,20 +94,23 @@ def train_agent(env, state_dim, action_dim, max_action, device, output_dir, args
     metric = 100.
     utils.print_banner(f"Training Start", separator="*", num_star=90)
 
-    training_time = 0.0
+    policy_train_overall_time = 0.0
+    q_train_overall_time = 0.0
     gradient_steps = 0
     normalized_score = [['mean', 'std']]
     
     while (training_iters < max_timesteps) and (not early_stop):
         iterations = int(20 * args.num_steps_per_epoch)
         #time
-        start_time = time.time()
-        loss_metric = agent.train(data_sampler,
+        #start_time = time.time()
+        loss_metric, q_train_time, policy_train_time = agent.train(data_sampler,
                                   iterations=iterations,
                                   batch_size=args.batch_size,
                                   log_writer=writer)
-        end_time = time.time()
-        training_time += end_time - start_time
+        #end_time = time.time()
+        #training_time += end_time - start_time
+        policy_train_overall_time += policy_train_time
+        q_train_overall_time += q_train_time
         gradient_steps += iterations
         
         training_iters += iterations
@@ -165,7 +168,7 @@ def train_agent(env, state_dim, action_dim, max_action, device, output_dir, args
             
     # save time
     
-    time_list = [['Gradient steps', 'Time'], [gradient_steps, training_time]]
+    time_list = [['Gradient steps', 'Policy Time', 'Critic Time'], [gradient_steps, policy_train_overall_time, q_train_overall_time]]
     file_time = os.path.join("./Diff_ql_models", expid, "training_time.csv")
     with open(file_time, mode='w', newline='') as file_t:
         writer = csv.writer(file_t)
@@ -266,7 +269,7 @@ if __name__ == "__main__":
     args.output_dir = f'{args.dir}'
 
     #args.num_epochs = hyperparameters[args.env_name]['num_epochs']
-    args.num_epochs = 1000
+    args.num_epochs = 40
     args.eval_freq = hyperparameters[args.env_name]['eval_freq']
     args.eval_episodes = 10 if 'v2' in args.env_name else 100
 
