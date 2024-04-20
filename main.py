@@ -14,6 +14,8 @@ from utils.data_sampler import Data_Sampler
 from utils.logger import logger, setup_logger
 from torch.utils.tensorboard import SummaryWriter
 
+
+from utils_sample import parallel_simple_eval_policy
 import time
 import csv
 
@@ -41,6 +43,14 @@ hyperparameters = {
 }
 
 def train_agent(env, state_dim, action_dim, max_action, device, output_dir, args):
+    # create file
+    if not os.path.exists("./Diff_ql_models"):
+        os.makedirs(dir)
+    expid = args.env_name + '-baseline-seed' + str(args.seed)
+    run_name = os.path.join("./Diff_ql_models", expid)
+    if not os.path.exists(run_name):
+        os.makedirs(run_name)
+
     # Load buffer
     dataset = d4rl.qlearning_dataset(env)
     data_sampler = Data_Sampler(dataset, device, args.reward_tune)
@@ -86,6 +96,7 @@ def train_agent(env, state_dim, action_dim, max_action, device, output_dir, args
 
     training_time = 0.0
     gradient_steps = 0
+    normalized_score = [['mean', 'std']]
     
     while (training_iters < max_timesteps) and (not early_stop):
         iterations = int(args.eval_freq * args.num_steps_per_epoch)
@@ -101,6 +112,7 @@ def train_agent(env, state_dim, action_dim, max_action, device, output_dir, args
         
         training_iters += iterations
         curr_epoch = int(training_iters // int(args.num_steps_per_epoch))
+            
 
         # Logging
         utils.print_banner(f"Train step: {training_iters}", separator="*", num_star=90)
@@ -131,15 +143,28 @@ def train_agent(env, state_dim, action_dim, max_action, device, output_dir, args
 
         if args.save_best_model:
             agent.save_model(output_dir, curr_epoch)
+
+         ## eval score
+        if training_iters % 20000 == 0:
+            mean, std, time_eval, query_eval = parallel_simple_eval_policy(agent.actor, args.env_name, seed = 0)
+            normalized_score.append([mean, std])
+            if (training_iters >= max_timesteps) or (early_stop):
+                time_eval_record = [['Query times', 'Time'], [query_eval, time_eval]]
+                file_time = os.path.join("./Diff_ql_models", expid, "eval_time.csv")
+                with open(file_time, mode='w', newline='') as file_t:
+                    writer = csv.writer(file_t)
+                    writer.writerows(time_eval_record)
+
+    # save normalized_score
+    filename = os.path.join("./Diff_ql_models", expid, "normalized_score.csv")
+    with open(filename, mode='w', newline='') as file:
+        writer = csv.writer(file)
+        writer.writerows(normalized_score)
+
+    
             
     # save time
-    if not os.path.exists("./Diff_ql_models"):
-        os.makedirs(dir)
-    expid = args.env_name + '-baseline-seed' + str(args.seed)
-    run_name = os.path.join("./Diff_ql_models", expid)
-    if not os.path.exists(run_name):
-        os.makedirs(run_name)
-
+    
     time_list = [['Gradient steps', 'Time'], [gradient_steps, training_time]]
     file_time = os.path.join("./Diff_ql_models", expid, "training_time.csv")
     with open(file_time, mode='w', newline='') as file_t:
