@@ -266,7 +266,7 @@ if __name__ == "__main__":
     args.output_dir = f'{args.dir}'
 
     #args.num_epochs = hyperparameters[args.env_name]['num_epochs']
-    args.num_epochs = 60
+    args.num_epochs = 1000
     args.eval_freq = hyperparameters[args.env_name]['eval_freq']
     args.eval_episodes = 10 if 'v2' in args.env_name else 100
 
