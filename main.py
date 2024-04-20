@@ -265,7 +265,8 @@ if __name__ == "__main__":
     args.device = f"cuda:{args.device}" if torch.cuda.is_available() else "cpu"
     args.output_dir = f'{args.dir}'
 
-    args.num_epochs = hyperparameters[args.env_name]['num_epochs']
+    #args.num_epochs = hyperparameters[args.env_name]['num_epochs']
+    args.num_epochs = 60
     args.eval_freq = hyperparameters[args.env_name]['eval_freq']
     args.eval_episodes = 10 if 'v2' in args.env_name else 100
 
