@@ -12,6 +12,7 @@ from utils.logger import logger
 from agents.diffusion import Diffusion
 from agents.model import MLP
 from agents.helpers import EMA
+import time
 
 
 class Critic(nn.Module):
@@ -105,13 +106,16 @@ class Diffusion_QL(object):
         self.ema.update_model_average(self.ema_model, self.actor)
 
     def train(self, replay_buffer, iterations, batch_size=100, log_writer=None):
-
+        q_train_time = 0.0
+        policy_train_time = 0.0
         metric = {'bc_loss': [], 'ql_loss': [], 'actor_loss': [], 'critic_loss': []}
         for _ in range(iterations):
             # Sample replay buffer / batch
             state, action, next_state, reward, not_done = replay_buffer.sample(batch_size)
 
             """ Q Training """
+            q_start_time = time.time()
+            
             current_q1, current_q2 = self.critic(state, action)
 
             if self.max_q_backup:
@@ -136,7 +140,13 @@ class Diffusion_QL(object):
                 critic_grad_norms = nn.utils.clip_grad_norm_(self.critic.parameters(), max_norm=self.grad_norm, norm_type=2)
             self.critic_optimizer.step()
 
+            q_end_time = time.time()
+            q_train_time += q_end_time - q_start_time
+
             """ Policy Training """
+            policy_start_time = time.time()
+
+            
             bc_loss = self.actor.loss(action, state)
             new_action = self.actor(state)
 
@@ -163,6 +173,9 @@ class Diffusion_QL(object):
 
             self.step += 1
 
+            policy_end_time = time.time()
+            policy_train_time += policy_end_time -  policy_start_time
+            
             """ Log """
             if log_writer is not None:
                 if self.grad_norm > 0:
@@ -182,7 +195,7 @@ class Diffusion_QL(object):
             self.actor_lr_scheduler.step()
             self.critic_lr_scheduler.step()
 
-        return metric
+        return metric, q_train_time, policy_train_time
 
     def sample_action(self, state):
         state = torch.FloatTensor(state.reshape(1, -1)).to(self.device)
