@@ -231,7 +231,7 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     ### Experimental Setups ###
     parser.add_argument("--exp", default='exp_1', type=str)                    # Experiment ID
-    parser.add_argument('--device', default=0, type=int)                       # device, {"cpu", "cuda", "cuda:0", "cuda:1"}, etc
+    parser.add_argument('--device', default="cuda", type=str)                       # device, {"cpu", "cuda", "cuda:0", "cuda:1"}, etc
     parser.add_argument("--env_name", default="walker2d-medium-expert-v2", type=str)  # OpenAI gym environment name
     parser.add_argument("--dir", default="results", type=str)                    # Logging directory
     parser.add_argument("--seed", default=0, type=int)                         # Sets Gym, PyTorch and Numpy seeds
@@ -262,7 +262,7 @@ if __name__ == "__main__":
     # parser.add_argument("--gn", default=-1.0, type=float)
 
     args = parser.parse_args()
-    args.device = f"cuda:{args.device}" if torch.cuda.is_available() else "cpu"
+    #args.device = f"cuda:{args.device}" if torch.cuda.is_available() else "cpu"
     args.output_dir = f'{args.dir}'
 
     #args.num_epochs = hyperparameters[args.env_name]['num_epochs']
