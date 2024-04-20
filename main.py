@@ -45,7 +45,7 @@ hyperparameters = {
 def train_agent(env, state_dim, action_dim, max_action, device, output_dir, args):
     # create file
     if not os.path.exists("./Diff_ql_models"):
-        os.makedirs(dir)
+        os.makedirs("./Diff_ql_models")
     expid = args.env_name + '-baseline-seed' + str(args.seed)
     run_name = os.path.join("./Diff_ql_models", expid)
     if not os.path.exists(run_name):
